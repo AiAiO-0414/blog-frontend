@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+	<link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="./css/base.css">
+	<style>
+		.content .item {
+			margin-top: 10px;
+			margin-bottom: 10px;
+		}
+
+		.content .item img {
+			width: 100%;
+			height: 100%;
+			box-shadow: 0px 0px 10px #ccc;
+
+		}
+
+		.content .item .title:hover {
+			text-decoration: underline;
+			cursor: pointer;
+		}
+
+
+		.content .item div:first-child:hover img {
+			opacity: 0.7;
+			cursor: pointer;
+			transition: all 0.3s ease-in-out;
+		}
+
+		.content .item .intro {
+			margin-top: 10px;
+			color: #ccc;
+			font-size: 14px;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<nav class="navbar navbar-default">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+						data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#" style="display:flex;">
+						AiAiO 的博客
+					</a>
+				</div>
+
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="#">首页</a></li>
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+								aria-haspopup="true" aria-expanded="false">分类 <span class="caret"></span></a>
+							<ul class="dropdown-menu" id="cast">
+							</ul>
+						</li>
+						<li><a href="/tags.html">标签</a></li>
+						<li><a href="/about.html">关于我</a></li>
+					</ul>
+				</div><!-- /.navbar-collapse -->
+			</div><!-- /.container-fluid -->
+		</nav>
+
+		<div class="content">
+			<h4>最新文章</h4>
+			<div class="artlist" id="artData">
+			</div>
+		</div>
+		<button type="button" class="btn  btn-block">查看更多</button>
+		<hr>
+
+		<div class="footer" style="text-align:center;font-size: 14px; color: #999;margin:10px 0;">
+			首页 | 主站 |<a href="https://github.com/?utm_source=gold_browser_extension"> GitHub </a> | created at 2021/04/14 | Powered by AiAiO
+		</div>
+	</div>
+</body>
+<script src="./js/jquery.js"></script>
+<script src="./bootstrap/js/bootstrap.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/layer/3.5.1/layer.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/moment.js/2.29.2/moment.js"></script>
+<script>
+	let page = 1;
+	let limit = 3;
+	let isDone = false;
+	let routerPath = 'http://127.0.0.1:3000/api'
+	//获取分类列表数据
+	async function getCate() {
+		let result = await $.get(`${routerPath}/cate`)
+		let cateHtml = ''
+		result.forEach(cateItem => {
+			let { cate_id, cate_name } = cateItem
+			cateHtml += `<li><a href="/cate.html?id=${cate_id}">${cate_name}</a></li>`
+		});
+		$('#cast').html(cateHtml)
+	}
+	getCate()
+
+	async function getArticle(page, limit) {
+		let result = await $.get(`${routerPath}/artData?page=${page}&limit=${limit}`)
+		if (result.length === 0) {
+			layer.msg('数据到底了')
+			isDone = true;
+			return false;
+		}
+		let ArticleHtml = ''
+		result.forEach(artItem => {
+			let { id, cate_id, cate_name, username, title, add_date, pic, host } = artItem
+			add_date = moment(add_date).format('YYYY-MM-DD')
+			cate_name = cate_name || '未分类'
+			let Img = pic ? `${host}upload/${pic}` : './image/1.webp'
+			ArticleHtml += `<div class='item row'>
+					<div class="col-md-2">
+						<img src="${Img}" alt="">
+					</div>
+					<div class="col-md-10">
+						<div class="date ">作者：${username} <div style="margin-top:5px;font-size:10px;color:#ccc">发布时间:${add_date}</div> 分类：<a href="/cate.html?cate_id=${cate_id}">${cate_name}</a></div>
+						<a href="/detail.html?id=${id}"><div class="title">${title}...</div></a>
+						<div class="intro">${title}...</div>
+					</div>
+					<hr>
+				</div>`
+		});
+		// $('#artData').html(ArticleHtml)
+
+		// 追加
+		let oldArticleHtmls = $("#artData").html()
+		$("#artData").html(oldArticleHtmls + ArticleHtml)
+	}
+	getArticle(page, limit)
+
+	// 单击加载更多
+	$(".btn").on('click', () => {
+		if (isDone) {
+			layer.msg('大哥别点了，没数据了')
+			return;
+		}
+		page++
+		getArticle(page, limit)
+	})
+</script>
+</html>
